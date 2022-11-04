@@ -6,17 +6,17 @@ namespace AspWebApplication.Util
 {
     public class CustomConstraint : IHttpRouteConstraint
     {
-        private string uri;
+        private readonly string _uri;
 
         public CustomConstraint(string uri)
         {
-            this.uri = uri;
+            _uri = uri;
         }
 
         public bool Match(HttpRequestMessage request, IHttpRoute route, string parameterName,
             IDictionary<string, object> values, HttpRouteDirection routeDirection)
         {
-            return !(uri == request.RequestUri.AbsolutePath);
+            return !(_uri == request.RequestUri.AbsolutePath);
         }
     }
 }
