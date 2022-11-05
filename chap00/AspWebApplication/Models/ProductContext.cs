@@ -4,8 +4,10 @@ namespace AspWebApplication.Models
 {
     public class ProductContext : DbContext
     {
-        // public ProductContext(string connectionString) : base(connectionString) { }
+        //public ProductContext() : base("name=ProductContext")
+        //{
+        //}
 
-        public DbSet<Product> Products { get; set; }
+        public virtual DbSet<Product> Products { get; set; }
     }
 }

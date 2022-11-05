@@ -1,14 +1,24 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 using System.Web.Http;
 using System.Web.Http.Cors;
+
 using AspWebApplication.Models;
+using AspWebApplication.Repositories;
 
 namespace AspWebApplication.Controllers
 {
     [EnableCors(origins: "http://localhost:33419", headers: "*", methods: "*")]
     public class ProductsController : ApiController
     {
+        //private ProductRepository _repo = new ProductRepository();
+
+        private IProductRepository _repository;
+
+        public ProductsController(IProductRepository repository)
+        {
+            _repository = repository;
+        }
+
         Product[] products = new Product[]
         {
             new Product { Id = 1, Name = "Tomato Soup", Category = "Groceries", Price = 1 },
@@ -19,12 +29,14 @@ namespace AspWebApplication.Controllers
         [DisableCors]
         public IEnumerable<Product> GetAllProducts()
         {
-            return products;
+            return _repository.GetAll();
         }
 
         public IHttpActionResult GetProduct(int id)
         {
-            var product = products.FirstOrDefault((p) => p.Id == id);
+            //var product = products.FirstOrDefault((p) => p.Id == id);
+
+            var product = _repository.GetByID(id);
             if (product == null)
             {
                 return NotFound();

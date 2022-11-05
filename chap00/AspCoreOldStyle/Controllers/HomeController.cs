@@ -55,7 +55,7 @@ namespace AspCoreOldStyle.Controllers
         }
 
         [HttpGet("{id:int}")] // https://localhost:8080/api/home/1
-        public ActionResult<Product> GetById(int id)
+        public ActionResult<Product> GetById(int id) // {FromHeader], [FromQuery], [FromRoute], [FromForm], [FromBody]
         {
             _logger.LogInformation("Call get method");
 

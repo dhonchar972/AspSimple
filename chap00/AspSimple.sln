@@ -1,5 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
+#
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AspWebApplication", "AspWebApplication\AspWebApplication.csproj", "{5D02B2C7-6919-4205-AA76-DD32C90A2156}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AspCoreWebApplication", "AspCoreWebApplication\AspCoreWebApplication.csproj", "{D6620E82-741A-4FCF-AE79-FF466183EFB0}"
@@ -7,6 +8,10 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AspCoreOldStyle", "AspCoreOldStyle\AspCoreOldStyle.csproj", "{7F6FFA44-92AE-4718-98D1-266A69C19273}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AspCoreMinimalApi", "AspCoreMinimalApi\AspCoreMinimalApi.csproj", "{21129A27-CBED-472B-A614-F86030C578B4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AspSimple.Tests", "AspSimple.Tests\AspSimple.Tests.csproj", "{E0144F51-8509-4D9B-A592-CD158BF9811B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AspWebApplication.Tests", "AspWebApplication.Tests\AspWebApplication.Tests.csproj", "{75945235-8584-4E58-85E3-ED3EB55B5D8C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -30,5 +35,13 @@ Global
 		{21129A27-CBED-472B-A614-F86030C578B4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{21129A27-CBED-472B-A614-F86030C578B4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{21129A27-CBED-472B-A614-F86030C578B4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E0144F51-8509-4D9B-A592-CD158BF9811B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E0144F51-8509-4D9B-A592-CD158BF9811B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E0144F51-8509-4D9B-A592-CD158BF9811B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E0144F51-8509-4D9B-A592-CD158BF9811B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{75945235-8584-4E58-85E3-ED3EB55B5D8C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{75945235-8584-4E58-85E3-ED3EB55B5D8C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{75945235-8584-4E58-85E3-ED3EB55B5D8C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{75945235-8584-4E58-85E3-ED3EB55B5D8C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

@@ -1,0 +1,13 @@
+{
+	"Serilog": {
+		"Using": [],
+		"MinimumLevel": {
+			"Default": "Debug"
+		},
+		"WriteTo": [
+			{
+				"Name": "Console"
+			}
+		]
+	}
+}

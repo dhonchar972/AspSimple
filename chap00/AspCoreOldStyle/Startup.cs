@@ -39,6 +39,8 @@ namespace AspCoreOldStyle
             }
             else
             {
+
+                //app.UseStatusCodePages();
                 app.UseExceptionHandler("/Error");
                 app.UseHsts();
             }
