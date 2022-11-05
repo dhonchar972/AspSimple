@@ -1,16 +1,12 @@
 ﻿using System.Reflection;
 using System.Web.Http;
-
 using AspWebApplication.Repositories;
-
 using Autofac;
 using Autofac.Integration.WebApi;
-
 using Microsoft.Extensions.Configuration;
-
 using Serilog;
 
-namespace AspWebApplication.App_Start
+namespace AspWebApplication
 {
     public class AutofacConfig
     {

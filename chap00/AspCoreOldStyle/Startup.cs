@@ -1,4 +1,5 @@
-using AspCoreOldStyle.Data;
+using AspCoreOldStyle.Models;
+
 using Microsoft.AspNetCore.Authentication.Negotiate;
 //using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -25,7 +26,7 @@ namespace AspCoreOldStyle
             {
                 options.FallbackPolicy = options.DefaultPolicy;
             });
-            services.AddDbContext<ApplicationDbContext>(options =>
+            services.AddDbContext<ProductContext>(options =>
                 options.UseSqlServer(Configuration.GetConnectionString("SqlServer")));
         }
 

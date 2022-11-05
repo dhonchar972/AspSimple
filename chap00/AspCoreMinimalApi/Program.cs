@@ -1,5 +1,8 @@
 using AspCoreMinimalApi.Data;
+using AspCoreMinimalApi.Models;
+
 using Microsoft.AspNetCore.Authentication.Negotiate;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,6 +17,8 @@ builder.Services.AddAuthorization(options =>
 {
     options.FallbackPolicy = options.DefaultPolicy;
 });
+builder.Services.AddDbContext<ProductContext>(options =>
+                options.UseSqlServer(builder.Configuration.GetConnectionString("SqlServer")));
 
 var app = builder.Build();
 
