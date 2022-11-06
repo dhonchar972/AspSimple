@@ -1,0 +1,292 @@
+@RestController
+@RequestMapping(path="/api/tacos", produces="application/json")
+@CrossOrigin(origins="http://tacocloud:8080") // CORS
+public class TacoController {
+    private TacoRepository tacoRepo;
+    public TacoController(TacoRepository tacoRepo) {
+        this.tacoRepo = tacoRepo;
+    }
+    @GetMapping(params="recent")
+    public Iterable<Taco> recentTacos() {
+        PageRequest page = PageRequest.of(0, 12, Sort.by("createdAt").descending());
+        return tacoRepo.findAll(page).getContent();
+    }
+}
+
+@GetMapping("/{id}")
+public ResponseEntity<Taco> tacoById(@PathVariable("id") Long id) {
+    Optional<Taco> optTaco = tacoRepo.findById(id);
+    if (optTaco.isPresent()) {
+        return new ResponseEntity<>(optTaco.get(), HttpStatus.OK);
+    }
+    return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
+}
+
+@PostMapping(consumes="application/json")
+@ResponseStatus(HttpStatus.CREATED) // HTTP 201
+public Taco postTaco(@RequestBody Taco taco) {
+    return tacoRepo.save(taco);
+}
+
+@PutMapping(path="/{orderId}", consumes="application/json")
+public TacoOrder putOrder(@PathVariable("orderId") Long orderId, @RequestBody TacoOrder order) {
+    order.setId(orderId);
+    return repo.save(order);
+}
+
+
+
+@Bean
+public RestTemplate restTemplate() { // WebClient in WebFlux
+    return new RestTemplate();
+}
+
+public Ingredient getIngredientById(String ingredientId) {
+    return rest.getForObject("http://localhost:8080/ingredients/{id}", Ingredient.class, ingredientId);
+}
+public Ingredient getIngredientById(String ingredientId) {
+    Map<String, String> urlVariables = new HashMap<>();
+    urlVariables.put("id", ingredientId);
+    return rest.getForObject("http://localhost:8080/ingredients/{id}", Ingredient.class, urlVariables);
+}
+public Ingredient getIngredientById(String ingredientId) {
+    Map<String, String> urlVariables = new HashMap<>();
+    urlVariables.put("id", ingredientId);
+    URI url = UriComponentsBuilder.fromHttpUrl("http://localhost:8080/ingredients/{id}").build(urlVariables);
+    return rest.getForObject(url, Ingredient.class);
+}
+public Ingredient getIngredientById(String ingredientId) {
+    ResponseEntity<Ingredient> responseEntity = rest.getForEntity("http://localhost:8080/ingredients/{id}", Ingredient.class, ingredientId);
+    log.info("Fetched time: {}", responseEntity.getHeaders().getDate());
+    return responseEntity.getBody();
+}
+
+
+
+@RestController
+@RequestMapping(path="/api/ingredients", produces="application/json")
+@CrossOrigin(origins="http://localhost:8080")
+public class IngredientController {
+
+    private IngredientRepository repo;
+
+    @Autowired
+    public IngredientController(IngredientRepository repo) {
+        this.repo = repo;
+    }
+
+    @GetMapping
+    public Iterable<Ingredient> allIngredients() {
+        return repo.findAll();
+    }
+
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    public Ingredient saveIngredient(@RequestBody Ingredient ingredient) {
+        return repo.save(ingredient);
+    }
+
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteIngredient(@PathVariable("id") String ingredientId) {
+        repo.deleteById(ingredientId);
+    }
+}
+
+    @PostMapping
+    @PreAuthorize("#{hasRole(‘ADMIN’)}")
+    public Ingredient saveIngredient(@RequestBody Ingredient ingredient) {
+        return repo.save(ingredient);
+    }
+    @DeleteMapping("/{id}")
+    @PreAuthorize("#{hasRole(‘ADMIN’)}")
+    public void deleteIngredient(@PathVariable("id") String ingredientId) {
+        repo.deleteById(ingredientId);
+    }
+    /// OR ///
+    @Override
+    protected void configure(HttpSecurity http) throws Exception {
+        http
+            .authorizeRequests()
+            .antMatchers(HttpMethod.POST, "/ingredients").hasRole("ADMIN")
+            .antMatchers(HttpMethod.DELETE, "/ingredients/**").hasRole("ADMIN")
+            ...
+    }
+
+@EnableWebSecurity
+public class SecurityConfig {
+    @Bean
+    SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http) throws Exception {
+        return http
+            .authorizeRequests(authorizeRequests ->
+                    authorizeRequests.anyRequest().authenticated())
+            .formLogin()
+            .and().build();
+    }
+    @Bean
+    UserDetailsService userDetailsService(UserRepository userRepo) {
+        return username -> userRepo.findByUsername(username);
+    }
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+}
+
+@Bean
+public ApplicationRunner dataLoader(UserRepository repo, PasswordEncoder encoder) {
+    return args -> {
+        repo.save(new User("habuma", encoder.encode("password"), "ROLE_ADMIN"));
+        repo.save(new User("tacochef", encoder.encode("password"), "ROLE_ADMIN"));
+    };
+}
+
+@Configuration(proxyBeanMethods = false)
+public class AuthorizationServerConfig {
+    @Bean
+    @Order(Ordered.HIGHEST_PRECEDENCE)
+    public SecurityFilterChain authorizationServerSecurityFilterChain(HttpSecurity http) throws Exception {
+        OAuth2AuthorizationServerConfiguration.applyDefaultSecurity(http);
+        return http
+            .formLogin(Customizer.withDefaults())
+            .build();
+    }
+
+    ...
+}
+
+@Bean
+public RegisteredClientRepository registeredClientRepository(PasswordEncoder passwordEncoder) {
+    RegisteredClient registeredClient = RegisteredClient.withId(UUID.randomUUID().toString())
+        .clientId("taco-admin-client")
+        .clientSecret(passwordEncoder.encode("secret"))
+        .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
+        .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+        .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
+        .redirectUri("http://127.0.0.1:9090/login/oauth2/code/taco-admin-client")
+        .scope("writeIngredients")
+        .scope("deleteIngredients")
+        .scope(OidcScopes.OPENID)
+        .clientSettings(clientSettings -> clientSettings.requireUserConsent(true))
+        .build();
+
+    return new InMemoryRegisteredClientRepository(registeredClient);
+}
+
+@Bean
+public JWKSource<SecurityContext> jwkSource() throws NoSuchAlgorithmException {
+    RSAKey rsaKey = generateRsa();
+    JWKSet jwkSet = new JWKSet(rsaKey);
+    return (jwkSelector, securityContext) -> jwkSelector.select(jwkSet);
+}
+private static RSAKey generateRsa() throws NoSuchAlgorithmException {
+    KeyPair keyPair = generateRsaKey();
+    RSAPublicKey publicKey = (RSAPublicKey) keyPair.getPublic();
+    RSAPrivateKey privateKey = (RSAPrivateKey) keyPair.getPrivate();
+    return new RSAKey.Builder(publicKey)
+        .privateKey(privateKey)
+        .keyID(UUID.randomUUID().toString())
+        .build();
+}
+private static KeyPair generateRsaKey() throws NoSuchAlgorithmException {
+    KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
+    keyPairGenerator.initialize(2048);
+    return keyPairGenerator.generateKeyPair();
+}
+@Bean
+public JwtDecoder jwtDecoder(JWKSource<SecurityContext> jwkSource) {
+    return OAuth2AuthorizationServerConfiguration.jwtDecoder(jwkSource);
+}
+
+spring:
+    security:
+        oauth2:
+            resourceserver:
+                jwt:
+                    jwk-set-uri: http://localhost:9000/oauth2/jwks
+
+@Bean
+SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http) throws Exception {
+	http
+		.authorizeRequests(authorizeRequests -> authorizeRequests.anyRequest().authenticated())
+		.oauth2Login(oauth2Login -> oauth2Login.loginPage("/oauth2/authorization/taco-admin-client"))
+		.oauth2Client(withDefaults());
+
+	return http.build();
+}
+
+
+
+
+@GetMapping(params="recent")
+public Flux<Taco> recentTacos() {
+	return Flux.fromIterable(tacoRepo.findAll()).take(12);
+}
+
+
+@ExtendWith(SpringExtension.class)
+@SpringBootTest(webEnvironment=WebEnvironment.RANDOM_PORT)
+public class TacoControllerWebTest {
+	@Autowired
+		private WebTestClient testClient;
+	}
+
+	@SuppressWarnings("unchecked")
+	@Test
+	public void shouldSaveATaco() {
+		TacoRepository tacoRepo = Mockito.mock(TacoRepository.class);
+
+		WebTestClient testClient = WebTestClient.bindToController(new TacoController(tacoRepo)).build();
+
+		Mono<Taco> unsavedTacoMono = Mono.just(testTaco(1L));
+		Taco savedTaco = testTaco(1L);
+		Flux<Taco> savedTacoMono = Flux.just(savedTaco);
+
+		when(tacoRepo.saveAll(any(Mono.class))).thenReturn(savedTacoMono);
+
+		testClient.post()
+			.uri("/api/tacos")
+			.contentType(MediaType.APPLICATION_JSON)
+			.body(unsavedTacoMono, Taco.class)
+			.exchange()
+			.expectStatus().isCreated()
+			.expectBody(Taco.class)
+			.isEqualTo(savedTaco);
+	}
+}
+
+Mono<Ingredient> ingredient = WebClient.create()
+	.get()
+	.uri("http://localhost:8080/ingredients/{id}", ingredientId)
+	.retrieve()
+	.bodyToMono(Ingredient.class);
+Flux<Ingredient> ingredients = WebClient.create()
+	.get()
+	.uri("http://localhost:8080/ingredients")
+	.retrieve()
+	.bodyToFlux(Ingredient.class);
+
+@Configuration
+@EnableWebSecurity
+public class SecurityConfig extends WebSecurityConfigurerAdapter {
+	@Override
+	protected void configure(HttpSecurity http) throws Exception {
+		http
+			.authorizeRequests()
+			.antMatchers("/api/tacos", "/orders").hasAuthority("USER")
+			.antMatchers("/**").permitAll();
+	}
+}
+@Configuration
+@EnableWebFluxSecurity
+public class SecurityConfig {
+	@Bean
+	public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
+		return http
+			.authorizeExchange()
+			.pathMatchers("/api/tacos", "/orders").hasAuthority("USER")
+			.anyExchange().permitAll()
+			.and()
+			.build();
+	}
+}
