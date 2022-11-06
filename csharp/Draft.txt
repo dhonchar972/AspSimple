@@ -1,0 +1,502 @@
+[action]  [controller]
+[Route("/set-speed/{speed}")] - optional(/)
+
+transient, singleton, scoped
+AddScoped<TService>, AddSingleton<TService>, AddScoped<TService, TImplementation>
+services.AddScoped<IEmailSender, EmailSender>();
+
+services.AddSingleton(new EmailServerSettings
+(
+    host: "smtp.server.com",
+    port: 25
+));
+
+services.AddScoped(typeof(IRespository<>), typeof(DbRepository<>));
+
+public void ConfigureServices(IServiceCollection services)
+{
+    services.AddControllers();
+    services.AddScoped<IMessageSender, EmailSender>();
+    services.AddScoped<IMessageSender, SmsSender>();
+    services.AddScoped<IMessageSender, FacebookSender>();
+}
+IEnumerable<IMessageSender> _collection;
+
+services.TryAddScoped<IMessageSender, SmsSender>();
+
+services.Replace(new ServiceDescriptor( typeof(IMessageSender), typeof(SmsSender), ServiceLifetime.Scoped));
+
+[FromServices]
+
+
+public static IHostBuilder CreateDefaultBuilder(string[] args)
+{
+    var builder = new HostBuilder()
+        .UseContentRoot(Directory.GetCurrentDirectory())
+        .ConfigureHostConfiguration(config =>
+        {
+            // Настройка поставщика конфигурации
+        })
+        .ConfigureAppConfiguration((hostingContext, config) =>
+        {
+            // Настройка поставщика конфигурации
+        })
+        .ConfigureLogging((hostingContext, logging) =>
+        {
+            logging.AddConfiguration(
+            hostingContext.Configuration.GetSection("Logging"));
+            logging.AddConsole();
+            logging.AddDebug();
+        })
+        .UseDefaultServiceProvider((context, options) =>
+        {
+            var isDevelopment = context.HostingEnvironment.IsDevelopment();
+            options.ValidateScopes = isDevelopment;
+            options.ValidateOnBuild = isDevelopment;
+        });
+
+    return builder;
+}
+
+public class Program
+{
+    public static void Main(string[] args)
+    {
+        CreateHostBuilder(args).Build().Run();
+    }
+
+    public static IHostBuilder CreateHostBuilder(string[] args) =>
+        Host.CreateDefaultBuilder(args)
+            .ConfigureAppConfiguration(AddAppConfiguration)
+            .ConfigureWebHostDefaults(webBuilder =>
+    {
+        webBuilder.UseStartup<Startup>();
+    });
+
+    public static void AddAppConfiguration(HostBuilderContext hostingContext, IConfigurationBuilder config)
+    {
+        //Добавляет функцию настройки конфигурации в HostBuilder. HostBuilder предоставляет контекст размещения и экземпляр ConfigurationBuilder.
+        config.Sources.Clear();
+        config.AddJsonFile("appsettings.json", optional: true);
+    }
+}
+
+public class Startup
+{
+    public Startup(IConfiguration config)
+    {
+        Configuration = config;
+    }
+
+    public IConfiguration Configuration { get; }
+}
+
+var zoomLevel = Configuration["MapSettings:DefaultZoomLevel"];
+Configuration.GetSection("MapSettings")["DefaultLocation:Latitude"];
+
+
+public class Program
+{
+    /* Дополнительная конфигурация класса Program */
+    public static void AddAppConfiguration(HostBuilderContext hostingContext, IConfigurationBuilder config)
+    {
+        config.Sources.Clear();
+        config
+            .AddJsonFile("sharedSettings.json", optional: true)
+            .AddJsonFile("appsettings.json", optional: true)
+            .AddEnvironmentVariables();
+    }
+}
+
+
+dotnet user-secrets set "MapSettings:GoogleMapsApiKey" F5RJT9GFHKR7
+if(env.IsDevelopment())
+{
+    configBuilder.AddUserSecrets<Startup>();
+}
+
+
+{
+    "MapSettings": {
+        "DefaultZoomLevel": 6,
+        "DefaultLocation": {
+            "latitude": 50.500,
+            "longitude": -4.000
+        }
+    },
+    "AppDisplaySettings": {
+        "Title": "Acme Store Locator",
+        "ShowCopyright": true
+    }
+}
+
+public class IndexModel : PageModel
+{
+    public IndexModel(IConfiguration config)
+    {
+        var title = config["HomePageSettings:Title"];
+        var showCopyright = bool.Parse(
+        config["HomePageSettings:ShowCopyright"]);
+    }
+}
+
+public class IndexModel: PageModel
+{
+    public IndexModel(IOptions<AppDisplaySettings> options) // POCO // IOptionsSnapshot<AppDisplaySettings> - при обновлении файла создает снапшот
+    {
+        AppDisplaySettings settings = options.Value;
+        var title = settings.Title;
+        bool showCopyright = settings.ShowCopyright;
+    }
+}
+
+public IConfiguration Configuration { get; }
+public void ConfigureServices(IServiceCollection services)
+{
+    services.Configure<MapSettings>(Configuration.GetSection("MapSettings"));
+    services.Configure<AppDisplaySettings>(Configuration.GetSection(nameof(AppDisplaySettings));
+}
+
+
+public IConfiguration Configuration { get; }
+public void ConfigureServices(IServiceCollection services)
+{
+    var settings = new MapSettings();
+    Configuration.GetSection("MapSettings").Bind(settings);
+    services.AddSingleton(settings);
+}
+public class MyMappingController
+{
+    private readonly MapSettings _settings;
+    public MyMappingController(MapSettings settings)
+    {
+        _settings = settings;
+    }
+}
+
+
+"Development", "Staging", "Production"
+IHostEnvironment.IsDevelopment();
+IHostEnvironment.IsStaging();
+IHostEnvironment.IsProduction();
+IHostEnvironment.IsEnvironment(string environmentName);
+
+
+public class Program
+{
+    public static void AddAppConfiguration(
+    HostBuilderContext hostingContext,
+    IConfigurationBuilder config)
+    {
+        var env = hostingContext.HostingEnvironment;
+        config
+        .AddJsonFile("appsettings.json", optional: false)
+        .AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true);
+    }
+}
+
+
+dotnet run --no-launch-profile --environment Staging // ignore parameters from launchSettings.json
+
+
+public void ConfigureServices(IServiceCollection services)
+{
+    var connString = Configuration.GetConnectionString("DefaultConnection");
+    services.AddDbContext<AppDbContext>(options => options.UseSqlServer(connString));
+}
+
+
+dotnet tool install --global dotnet-ef
+dotnet ef migrations add InitialSchema
+dotnet ef database update
+
+
+Фильтры:
+фильтры авторизации – IAuthorizationFilter или IAsyncAuthorizationFilter;
+фильтры ресурсов – IResourceFilter или IAsyncResourceFilter;
+фильтры действий – IActionFilter или IAsyncActionFilter;
+фильтры страниц – IPageFilter или IAsyncPageFilter;
+фильтры исключений – IExceptionFilter или IAsyncExceptionFilter;
+фильтры результатов – IResultFilter или IAsyncResultFilter;
+
+public class LogResourceFilter : Attribute, IResourceFilter
+{
+    public void OnResourceExecuting(ResourceExecutingContext context)
+    {
+        Console.WriteLine("Executing!");
+    }
+    public void OnResourceExecuted(ResourceExecutedContext context)
+    {
+        Console.WriteLine("Executed"");
+    }
+}
+public class LogAsyncResourceFilter : Attribute, IAsyncResourceFilter
+{
+    public async Task OnResourceExecutionAsync(ResourceExecutingContext context, ResourceExecutionDelegate next)
+    {
+        Console.WriteLine("Executing async!");
+        ResourceExecutedContext executedContext = await next();
+        Console.WriteLine("Executed async!");
+    }
+}
+public class RecipeController : ControllerBase
+{
+    [LogResourceFilter]
+    public IActionResult Index()
+    {
+        return Ok();
+    }
+    public IActionResult View()
+    {
+        return OK();
+    }
+}
+//or//
+public class Startup
+{
+    public void ConfigureServices(IServiceCollection services)
+    {
+        services.AddControllers(options =>
+            {
+                options.Filters.Add(new LogResourceFilter());
+                options.Filters.Add(typeof(LogResourceFilter));
+                options.Filters.Add<LogResourceFilter>();
+            });
+    }
+}
+
+
+
+dotnet new webapi -au Individual -uld
+services.AddDefaultIdentity<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true).AddEntityFrameworkStores<AppDbContext>();
+public class AppDbContext : IdentityDbContext<ApplicationUser>
+{
+    public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
+    public DbSet<Recipe> Recipes { get; set; }
+}
+
+
+services.AddAuthorization(options =>
+{
+    options.AddPolicy("CanEnterSecurity", policyBuilder => policyBuilder.RequireClaim("BoardingPassNumber"));
+});
+
+
+Path.Combine("subdir", "myfile.json"); // "subdir\myfile.json" on win, "subdir/myfile.json" on linux
+
+
+
+public class Program
+{
+    public static void Main(string[] args)
+    {
+        Log.Logger = new LoggerConfiguration()
+            .WriteTo.Console()
+            .CreateLogger();
+    try
+    {
+        CreateHostBuilder(args).Build().Run();
+    }
+    catch (Exception ex)
+    {
+        Log.Fatal(ex, "Host terminated unexpectedly");
+    }
+    finally
+    {
+        Log.CloseAndFlush();
+    }
+}
+public static IHostBuilder CreateHostBuilder(string[] args) =>
+    Host.CreateDefaultBuilder(args)
+        .UseSerilog()
+        .ConfigureWebHostDefaults(webBuilder =>
+            {
+                webBuilder.UseStartup<Startup>();
+            });
+        }
+
+public class Program
+{
+    public static void Main(string[] args)
+    {
+        CreateHostBuilder(args).Build().Run();
+    }
+    public static IHostBuilder CreateHostBuilder(string[] args) =>
+        new HostBuilder()
+            .UseContentRoot(Directory.GetCurrentDirectory())
+            .ConfigureAppConfiguration(config => config.AddJsonFile("appsettings.json"))
+            .ConfigureLogging((ctx, builder) =>
+                {
+                    builder.AddConfiguration(ctx.Configuration.GetSection("Logging"));
+                    builder.AddConsole();
+                })
+            .ConfigureWebHostDefaults(webBuilder =>
+                {
+                    webBuilder.UseStartup<Startup>();
+                });
+}
+{
+    "Logging": {
+        "LogLevel": {
+            "Default": "Debug",
+            "System": "Warning",
+            "Microsoft": "Warning"
+        },
+        "File": {
+            "LogLevel": {
+                "Default": "Information"
+            }
+        },
+        "Console": {
+            "LogLevel": {
+                "Default": "Debug",
+                "Microsoft": "Warning"
+            }
+        }
+    }
+}
+
+_logger.LogInformation("No, I don't have scope");
+using(_logger.BeginScope("Scope value"))
+using(_logger.BeginScope(new Dictionary<string, object> {{ "CustomValue1", 12345 } }))
+{
+    _logger.LogInformation("Yes, I have the scope!");
+}
+_logger.LogInformation("No, I lost it again");
+
+{ // HTTPS with Kestrel configuration
+    "Kestrel": {
+        "Certificates": {
+            "Default": {
+                "Path": "localhost.pfx",
+                "Password": "testpassword"
+            }
+        }
+    }
+}
+
+
+public void ConfigureServices(IServiceCollection services)
+{
+	services.AddCors(options => {
+		options.AddPolicy("AllowShoppingApp", policy => policy.WithOrigins("http://shopping.com").AllowAnyMethod());
+	});
+}
+public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+{
+	app.UseRouting();
+	app.UseCors("AllowShoppingApp");
+	app.UseAuthentication();
+	app.UseAuthorization();
+	app.UseEndpoints(endpoints =>
+		{
+			endpoints.MapControllers();
+		});
+}
+[EnableCors("AllowShoppingApp")]
+public class ProductController: Controller
+{
+	[EnableCors("AllowAnyOrigin")
+	public IActionResult GeteProducts() { /* Method */ }
+	public IActionResult GeteProductPrice(int id) { /* Method */ }
+	[DisableCors]
+	public IActionResult DeleteProduct(int id) { /* Method */ }
+}
+
+CorsPolicyBuilder:
+	WithOrigins("http://shopping.com")
+	AllowAnyOrigin()
+	WithMethods()/AllowAnyMethod()
+	WithHeaders()/AllowAnyHeader()
+	WithExposedHeaders()
+	AllowCredentials()
+
+
+public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+{
+	app.UseRouting();
+	app.UseAuthentication();
+	app.UseAuthorization();
+	app.UseEndpoints(endpoints =>
+		{
+			endpoints.MapPost("/echo", async (HttpContext ctx =>
+				{
+					MyCustomType model = await ctx.Request.ReadFromJsonAsync<MyCustomType>();
+					await context.Response.WriteAsJsonAsync(model);
+				});
+			endpoints.MapRazorPages();
+			endpoints.MapHealthChecks("/healthz");
+		});
+}
+
+public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+{
+	app.UseRouting();
+	app.UseAuthentication();
+	app.UseAuthorization();
+	app.UseEndpoints(endpoints =>
+		{
+			endpoints.MapPingPong("/ping").RequireAuthorization(); // same to [Authorize]
+			endpoints.MapRazorPages();
+			endpoints.MapHealthChecks("/healthz").RequireAuthorization("HealthCheckPolicy")
+		});
+}
+
+
+
+[ApiController]
+public class ValuesController : ControllerBase
+{
+	private readonly IHttpClientFactory _factory;
+
+	public ValuesController(IHttpClientFactory factory)
+	{
+		_factory = factory;
+	}
+
+	[HttpGet("values")]
+	public async Task<string> GetRates()
+	{
+		HttpClient client = _factory.CreateClient();
+		client.BaseAddress = new Uri("https://api.exchangeratesapi.io");
+		client.DefaultRequestHeaders.Add(HeaderNames.UserAgent, "ExchangeRateViewer");
+		var response = await client.GetAsync("latest");
+		response.EnsureSuccessStatusCode();
+		return await response.Content.ReadAsStringAsync();
+	}
+}
+
+public void ConfigureServices(IServiceCollection services)
+{
+	services.AddHttpClient("rates", (HttpClient client) =>
+	{
+	client.BaseAddress =
+	new Uri("https://api.exchangeratesapi.io");
+	client.DefaultRequestHeaders.Add(
+	HeaderNames.UserAgent, "ExchangeRateViewer");
+	})
+	.ConfigureHttpClient((HttpClient client) => {})
+	.ConfigureHttpClient((IServiceProvider provider, HttpClient client) => {});
+}
+[ApiController]
+public class ValuesController : ControllerBase
+{
+	private readonly IHttpClientFactory _factory;
+
+	public ValuesController(IHttpClientFactory factory)
+	{
+		_factory = factory;
+	}
+
+	[HttpGet("values")]
+	public async Task<string> GetRates()
+	{
+		HttpClient client = _factory.CreateClient("rates");
+		var response = await client.GetAsync("latest");
+		response.EnsureSuccessStatusCode();
+		return await response.Content.ReadAsStringAsync();
+	}
+}
+
+
+[InlineData], [ClassData], [MemberData]
