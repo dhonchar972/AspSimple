@@ -290,3 +290,98 @@ public class SecurityConfig {
 			.build();
 	}
 }
+
+
+@Entity
+@TaЬle(name = "singer")
+@NamedQueries({
+    @NamedQuery(name=Singer.FIND_ALL, query="select s from Singer s"),
+    @NamedQuery(name=Singer.COUNT_ALL, query="select count(s) from Singer s")
+})
+public class Singer implements Serializable {
+
+    public static final String FIND_ALL = "Singer.findAll";
+    public static final String COUNT ALL = "Singer.countAll";
+
+    @Id
+    @GeneratedValue(strategy = IDENTITY)
+    @Column(name = "ID")
+    private Long id;
+
+    @Version
+    @Column(name = "VERSION")
+    private int version;
+    
+    @Column(name = "FIRST_NAМE")
+    private String firstName;
+    @Column(name = "LAST NАМЕ")
+    private String lastName;
+
+    @Temporal(TemporalType.DATE)
+    @Column(name = "ВIRTH_DATE")
+    private Date birthDate;
+
+    @OneToMany(mappedBy = "singer", cascade=CascadeType.ALL, orphanRemoval=true)
+    private Set<Album> albums = new HashSet<>();
+
+    ...
+}
+
+@Entity
+@Table(name = "album")
+public class Album implements Serializable {
+
+    @Id
+    @GeneratedValue(strategy = IDENTITY)
+    @Column(name = "ID")
+    private Long id;
+
+    @Version
+    @Column(name = "VERSION")
+    private int version;
+
+    @Column
+    private String title;
+
+    @Temporal(TemporalType.DATE)
+    @Column(name = "RELEASE_DATE")
+    private Date releaseDate;
+
+    @ManyToOne
+    @JoinColumn(name = "SINGER_ID")
+    private Singer singer;
+
+    ...
+}
+
+@Configuration
+@EnableTransactionManagement
+@ComponentScan(basePackages = "com.folder")
+public class ServicesConfig {
+
+    @Autowired
+    EntityManagerFactory entityManagerFactory;
+
+    @Bean
+    public PlatformTransactionManager transactionManager() {
+        return new JpaTransactionManager(entityManagerFactory);
+    }
+}
+
+@Service("singerService")
+@Transactional
+puЫic class SingerServiceimpl implements SingerService {
+
+    private SingerRepository singerRepository;
+
+    @Autowired
+    public void setSingerRepository(SingerRepository singerRepository) {
+        this.singerRepository = singerRepository;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Singer> findAll() {
+        return Lists.newArrayList(singerRepository.findAll());
+    }
+}
