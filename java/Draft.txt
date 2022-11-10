@@ -385,3 +385,223 @@ puЫic class SingerServiceimpl implements SingerService {
         return Lists.newArrayList(singerRepository.findAll());
     }
 }
+
+
+@Component
+@ConfigurationProperties(prefix="todo")
+@Data
+public class ToDoRestClientProperties { // POCO class
+	private String url;
+	private String basePath;
+}
+application.properties:
+	todo.url=http://localhost:8080
+	todo.base-path=/api/todo
+
+
+@Service
+public class ToDoRestClient { // REST_TEMPLATE
+
+    private RestTemplate restTemplate;
+    private ToDoRestClientProperties properties;
+
+    public ToDoRestClient(ToDoRestClientProperties properties) {
+        this.restTemplate = new RestTemplate();
+        this.restTemplate.setErrorHandler(new ToDoErrorHandler());
+        this.properties = properties;
+    }
+
+    public Iterable<ToDo> findAll() throws URISyntaxException {
+        RequestEntity<Iterable<ToDo>> requestEntity = new RequestEntity<Iterable<ToDo>>(HttpMethod.GET,
+                new URI(properties.getUrl() + properties.getBasePath()));
+
+        ResponseEntity<Iterable<ToDo>> response = restTemplate.exchange(requestEntity, 
+                new ParameterizedTypeReference<Iterable<ToDo>>(){});
+
+        if (response.getStatusCode() == HttpStatus.OK)
+            return response.getBody();
+
+        return null;
+    }
+
+    public ToDo findById(String id) {
+        Map<String, String> params = new HashMap<String, String>();
+        params.put("id", id);
+        return restTemplate.getForObject(properties.getUrl() + properties.getBasePath() + "/{id}",ToDo.class,params);
+    }
+
+    public ToDo upsert(ToDo toDo) throws URISyntaxException {
+        RequestEntity<?> requestEntity = new RequestEntity<>(toDo, HttpMethod.POST, 
+                new URI(properties.getUrl() + properties.getBasePath()));
+
+        ResponseEntity<?> response = restTemplate.exchange(requestEntity, 
+                new ParameterizedTypeReference<ToDo>() {});
+
+        if (response.getStatusCode() == HttpStatus.CREATED)
+            return restTemplate.getForObject(response.getHeaders().getLocation(),ToDo.class);
+
+        return null;
+    }
+
+    public ToDo setCompleted(String id) throws URISyntaxException {
+        Map<String, String> params = new HashMap<String, String>();
+        params.put("id", id);
+
+        restTemplate.postForObject(properties.getUrl() + properties.getBasePath() 
+                + "/{id}?_method=patch",null,ResponseEntity.class, params);
+
+        return findById(id);
+    }
+
+    public void delete(String id) {
+        Map<String, String> params = new HashMap<String, String>();
+        params.put("id", id);
+
+        restTemplate.delete(properties.getUrl() + properties.getBasePath() + "/{id}", params);
+    }
+}
+
+@Repository
+public class ToDoRepository implements CommonRepository<ToDo> {
+
+    private static final String SQL_INSERT = "insert into todo (id, description, created, modified, completed) values (:id,:description,:created,:modified,:completed)";
+    private static final String SQL_QUERY_FIND_ALL = "select id, description, created, modified, completed from todo";
+    private static final String SQL_QUERY_FIND_BY_ID = SQL_QUERY_FIND_ALL + "where id = :id";
+    private static final String SQL_UPDATE = "update todo set description = :description, modified = :modified, completed = :completed where id = :id";
+    private static final String SQL_DELETE = "delete from todo where id = :id";
+
+    private final NamedParameterJdbcTemplate jdbcTemplate;
+
+    public ToDoRepository(NamedParameterJdbcTemplate jdbcTemplate){
+        this.jdbcTemplate = jdbcTemplate;
+    }
+
+    private RowMapper<ToDo> toDoRowMapper = (ResultSet rs, int rowNum) -> {
+        ToDo toDo = new ToDo();
+        toDo.setId(rs.getString("id"));
+        toDo.setDescription(rs.getString("description"));
+        toDo.setModified(rs.getTimestamp("modified").toLocalDateTime());
+        toDo.setCreated(rs.getTimestamp("created").toLocalDateTime());
+        toDo.setCompleted(rs.getBoolean("completed"));
+
+        return toDo;
+    };
+
+    @Override
+    public ToDo save(final ToDo domain) {
+        ToDo result = findById(domain.getId());
+
+        if (result != null) {
+            result.setDescription(domain.getDescription());
+            result.setCompleted(domain.isCompleted());
+            result.setModified(LocalDateTime.now());
+            return upsert(result, SQL_UPDATE);
+        }
+
+        return upsert(domain,SQL_INSERT);
+    }
+
+    private ToDo upsert(final ToDo toDo, final String sql) {
+        Map<String, Object> namedParameters = new HashMap<>();
+        namedParameters.put("id",toDo.getId());
+        namedParameters.put("description",toDo.getDescription());
+        namedParameters.put("created",java.sql.Timestamp.valueOf(toDo.getCreated()));
+        namedParameters.put("modified",java.sql.Timestamp.valueOf(toDo.getModified()));
+        namedParameters.put("completed",toDo.isCompleted());
+        this.jdbcTemplate.update(sql,namedParameters);
+
+        return findById(toDo.getId());
+    }
+
+    @Override
+    public Iterable<ToDo> save(Collection<ToDo> domains) {
+        domains.forEach( this::save);
+        return findAll();
+    }
+
+    @Override
+    public void delete(final ToDo domain) {
+        Map<String, String> namedParameters = Collections.singletonMap("id", domain.getId());
+        this.jdbcTemplate.update(SQL_DELETE,namedParameters);
+    }
+
+    @Override
+    public ToDo findById(String id) {
+        try {
+            Map<String, String> namedParameters = Collections.singletonMap("id", id);
+            return this.jdbcTemplate.queryForObject(SQL_QUERY_FIND_BY_ID, namedParameters, toDoRowMapper);
+        } catch (EmptyResultDataAccessException ex) {
+            return null;
+        }
+    }
+
+    @Override
+    public Iterable<ToDo> findAll() {
+        return this.jdbcTemplate.query(SQL_QUERY_FIND_ALL, toDoRowMapper);
+    }
+}
+
+
+    EmitterProcessor<ToDo> stream = EmitterProcessor.create();
+    Flux<List<ToDo>> promise = stream
+            .filter( s -> s.isCompleted())
+            .doOnNext(s -> LOG.info("FLUX >>> ToDo: {}", s.getDescription()))
+            .collectList()
+            .subscribeOn(Schedulers.single());
+            
+    stream.onNext(new ToDo("Read a Book",true));
+    stream.onNext(new ToDo("Listen Classical Music",true));
+    stream.onNext(new ToDo("Workout in the Mornings"));
+    stream.onNext(new ToDo("Organize my room", true));
+    stream.onNext(new ToDo("Go to the Car Wash", true));
+    stream.onNext(new ToDo("SP1 2018 is coming" , true));
+    stream.onComplete();
+    promise.block();
+
+
+    WebClient client = WebClient.create("http://my-to-dos.com");
+    Mono<ToDo> result = client
+        .get()
+        .uri("/todo/{id}", id)
+        .accept(MediaType.APPLICATION_JSON)
+        .retrieve()
+        .bodyToMono(ToDo.class);
+    Flux<ToDo> result = client
+        .get()
+        .uri("/todo").accept(MediaType.TEXT_EVENT_STREAM)
+        .retrieve()
+        .bodyToFlux(ToDo.class);
+
+
+@Configuration
+public class ToDoSecurityConfig extends WebSecurityConfigurerAdapter {
+
+    @Override
+    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+        auth.inMemoryAuthentication()
+            .passwordEncoder(passwordEncoder())
+            .withUser("apress")
+            .password(passwordEncoder().encode("springboot2"))
+            .roles("ADMIN","USER");
+    }
+
+    @Bean
+    public BCryptPasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
+    protected void configure(HttpSecurity http) throws Exception {
+        http
+            .authorizeRequests()
+            .requestMatchers(PathRequest
+                .toStaticResources()
+                .atCommonLocations()).permitAll()
+            .anyRequest().fullyAuthenticated()
+            .and()
+            .formLogin().loginPage("/login").permitAll()
+            .and()
+            .logout()
+            .logoutRequestMatcher(new AntPathRequestMatcher("/logout"))
+            .logoutSuccessUrl("/login");
+    }
+}
