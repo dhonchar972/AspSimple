@@ -1,20 +1,5 @@
-
-# Java class files
-*.class
-
-.DS_Store/
-/target
-
-/target
-/target/
-**/target/
-
-.gradle
-!gradle/wrapper/gradle-wrapper.jar
-!**/src/main/**/build/
-!**/src/test/**/build/
-
 HELP.md
+target/
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**
 !**/src/test/**
@@ -34,11 +19,6 @@ HELP.md
 *.iml
 *.ipr
 
-# Eclipse project files
-.classpath
-.project
-.settings/
-
 ### NetBeans ###
 /nbproject/private/
 /nbbuild/
@@ -49,12 +29,3 @@ build/
 
 ### VS Code ###
 .vscode/
-
-### VisualStudio ###
-.vs/
-obj/
-bin/
-packages/
-/_ReSharper.Caches/
-riderModule.iml
-**.user
