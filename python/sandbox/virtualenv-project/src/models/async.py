@@ -25,6 +25,10 @@ def download_many(cc_list: list[str]) -> int:
     return asyncio.run(supervisor(cc_list))
 
 
+def download_one(client, cc):
+    pass
+
+
 async def supervisor(cc_list: list[str]) -> int:
     async with AsyncClient() as client:
         to_do = [download_one(client, cc)
